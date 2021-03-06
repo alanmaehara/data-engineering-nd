@@ -1,2 +1,6 @@
 # data-engineering-nd
-Projects from Udacity's Data Engineer Nanodegree program.
+---
+
+This repository contains all projects done for the Data Engineer Nanodegree program by Udacity.
+
+---

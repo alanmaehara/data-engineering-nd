@@ -25,29 +25,24 @@ The following data sources were utilized in this project:
 - **Temperature Table**: This data comes from [Kaggle's World Temperature Data](https://www.kaggle.com/berkeleyearth/climate-change-earth-surface-temperature-data). Data from the most recent and usable year was utilized in this project (2012).
 - **Demographic Table**: This data comes from the [US Census Bureau's 2015 American Community Survey](https://public.opendatasoft.com/explore/dataset/us-cities-demographics/information/?dataChart=eyJxdWVyaWVzIjpbeyJjb25maWciOnsiZGF0YXNldCI6InVzLWNpdGllcy1kZW1vZ3JhcGhpY3MiLCJvcHRpb25zIjp7fX0sImNoYXJ0cyI6W3siYWxpZ25Nb250aCI6dHJ1ZSwidHlwZSI6ImNvbHVtbiIsImZ1bmMiOiJBVkciLCJ5QXhpcyI6Im1lZGlhbl9hZ2UiLCJzY2llbnRpZmljRGlzcGxheSI6dHJ1ZSwiY29sb3IiOiIjRkY1MTVBIn1dLCJ4QXhpcyI6ImNpdHkiLCJtYXhwb2ludHMiOjUwLCJzb3J0IjoiIn1dLCJ0aW1lc2NhbGUiOiIiLCJkaXNwbGF5TGVnZW5kIjp0cnVlLCJhbGlnbk1vbnRoIjp0cnVlfQ%3D%3D). It contains demographic data in the US.
 
-In addition, some complementary files were used:
-- `capstone_template.ipynb`: used to perform data quality checks and data cleaning on dimension tables.
-- `create_cluster.ipynb`: used to programmaticaly create AWS Redshift clusters for this project.
-
 ### 3.1. Fact Table
 
 **Immigration - 3,096,313 entries**
 |No|Column|Type|Description|
 |---|---|---|---|
-|1|`cicid`|INT|ID|
-|2|`i94yr`|INT|Arrival year|
-|3|`i94mon`|INT|Arrival month|
-|4|`i94cit`|NUMERIC|Country of origin (three-digit code)|
-|5|`i94port`|VARCHAR(4)|Port where immigrant disembarked (three-character code|
-|6|`arrdate`|NUMERIC|Arrival date in the US|
-|7|`i94mode`|SMALLINT|Transportation mode to the US|
-|8|`i94addr`|VARCHAR(2)|State where immigrant is located|
-|9|`depdate`|VARCHAR|Departure date in the US|
-|10|`i94bir`|INT|Age|
-|11|`i94visa`|SMALLINT|Reason of stay|
-|12|`biryear`|INT|Year of birth|
-|13|`gender`|INT|Gender|
-|14|`visatype`|VARCHAR|Visa Type|
+|1|`cicid`|DOUBLE PRECISION|ID|
+|2|`i94yr`|DOUBLE PRECISION|Arrival year|
+|3|`i94mon`|DOUBLE PRECISION|Arrival month|
+|4|`i94port`|VARCHAR|Port where immigrant disembarked (three-character code|
+|5|`i94mode`|DOUBLE PRECISION|Transportation mode to the US|
+|6|`i94addr`|VARCHAR(2)|State where immigrant is located|
+|7|`i94bir`|DOUBLE PRECISION|Age|
+|8|`i94visa`|DOUBLE PRECISION|Reason of stay|
+|9|`biryear`|DOUBLE PRECISION|Year of birth|
+|10|`gender`|VARCHAR|Gender|
+|11|`visatype`|VARCHAR|Visa Type|
+|12|`arrival_date`|TIMESTAMP WITHOUT TIME ZONE|Date of arrival in the US|
+|13|`departure_date`|TIMESTAMP WITHOUT TIME ZONE|Date of departure in the US|
 
 ### 3.2. Dimension Table
 
@@ -67,7 +62,7 @@ In addition, some complementary files were used:
 |No|Column|Type|Description|
 |---|---|---|---|
 |1|`dt`|TIMESTAMP|timestamp with year, month, and day|
-|2|`AverageTemperature`|NUMERIC|Average temperature in Celsius|
+|2|`AverageTemperature`|DECIMAL|Average temperature in Celsius|
 |3|`city`|VARCHAR|City where temperature measurements were taken|
 |3|`year`|VARCHAR|City where temperature measurements were taken|
 |3|`month`|VARCHAR|City where temperature measurements were taken|
@@ -76,11 +71,11 @@ In addition, some complementary files were used:
 |No|Column|Type|Description|
 |---|---|---|---|
 |1|`city`|VARCHAR|City|
-|2|`median_age`|INT|City's median age|
-|3|`male_pop`|INT|Number of male population|
-|4|`fem_pop`|INT|Number of female population|
-|5|`total_pop`|INT|Total population|
-|6|`foreign_born`|INT|Number of foreign-born people living in the city|
+|2|`median_age`|INTEGER|City's median age|
+|3|`male_pop`|INTEGER|Number of male population|
+|4|`fem_pop`|INTEGER|Number of female population|
+|5|`total_pop`|INTEGER|Total population|
+|6|`foreign_born`|INTEGER|Number of foreign-born people living in the city|
 
 All of them were stored in Amazon S3 for further ETL.
 
@@ -96,9 +91,9 @@ The entire process is as follows:
 2. Create clusters in Amazon Redshift and generate final tables to receive cleaned data;
 3. Copy raw data to Redshift, perform data cleaning and transformations, and ingest cleaned data to Redshift tables. 
 
-## 4.1 Data Cleaning and Transformation
+### 4.1 Data Cleaning, Data Quality Checks, and Data Transformation
 
-The following tasks were performed during the transformation step:
+Data cleaning and transformation were done in the `data_quality.ipynb` file. The following tasks were performed:
 - In the immigration table, SAS-formatted dates `arrdate` and `depdate` were transformed to proper dates in 'YY-MM-DD' format. Null values in the `i94port` column were removed, and duplicates in the `cicid` column were removed (if any).
 - In the airport table, null values and duplicates in the `local_code` columns were removed.
 - Using the immigration table (fact) as a base table, perform a left join with table airport on `i94port` and `local_code`.
@@ -110,12 +105,48 @@ The following tasks were performed during the transformation step:
 
 To generate the tables, two files were created:
 
-1. `sql_queries.py` : it contains all queries to create, insert, update, and delete tables;
-2. `create_tables.py`: calls `sql_queries.py` to create and drop tables (if necessary).
+1. `create_cluster.ipynb`: used to programmaticaly create AWS Redshift clusters for this project.
+2. `sql_queries.py` : it contains all queries to create, insert, update, and delete tables;
+3. `create_tables.py`: calls `sql_queries.py` to create and drop tables (if necessary).
 
 In summary, once the ETL pipeline was built, the following scripts were ran from the terminal (in order) so that the tables would become available for the company:
 1. `python create_tables.py`
 2. `python etl.py`
+
+### 4.2. Data Dictionary
+
+The final table contains the following columns:
+
+**immigration_completed - 3,096,313 entries**
+|No|Column|Type|
+|---|---|---|
+|1|cicid               |DOUBLE PRECISION
+|2|i94yr               |DOUBLE PRECISION
+|3|i94mon              |DOUBLE PRECISION
+|4|i94port             |VARCHAR
+|5|i94mode             |DOUBLE PRECISION
+|6|i94addr             |VARCHAR
+|7|i94bir              |DOUBLE PRECISION
+|8|i94visa             |DOUBLE PRECISION
+|9|biryear             |DOUBLE PRECISION
+|10|gender               |VARCHAR
+|11|visatype           |VARCHAR
+|12|arrival_date        |TIMESTAMP WITHOUT TIME ZONE
+|13|departure_date       |TIMESTAMP WITHOUT TIME ZONE
+|14|airport_type          |VARCHAR
+|15|airport_name           |VARCHAR
+|16|iso_region              |VARCHAR
+|17|local_code              |VARCHAR
+|18|average_temp            |DECIMAL
+|19|city                    |VARCHAR
+|20|median_age              |DECIMAL
+|21|male_pop                |INTEGER
+|22|fem_pop                 |INTEGER
+|23|total_pop               |INTEGER
+|24|foreign_born            |INTEGER
+
+
+
 
 # 5. Addressing Other Scenarios
 
